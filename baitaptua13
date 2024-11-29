@@ -1,0 +1,123 @@
+#include <iostream>
+#include <string>
+using namespace std;
+
+// 1. Khai báo cấu trúc hàng đợi
+struct Product {
+    string name;
+    float price;
+    int quantity;
+};
+
+struct Cart {
+    int cartId;
+    Product products[100];  // Giả sử tối đa 100 sản phẩm/giỏ
+    int numProducts;
+    float totalAmount;
+    Cart* next;
+};
+
+struct Queue {
+    Cart *front, *rear;
+    float totalRevenue;  // Tổng doanh thu
+    int productACount;   // Số lượng sản phẩm A đã bán
+};
+
+// Khởi tạo hàng đợi
+void initQueue(Queue &q) {
+    q.front = q.rear = NULL;
+    q.totalRevenue = 0;
+    q.productACount = 0;
+}
+
+// Thêm giỏ hàng vào queue
+void enQueue(Queue &q, int cartId) {
+    Cart* newCart = new Cart;
+    newCart->cartId = cartId;
+    newCart->numProducts = 0;
+    newCart->totalAmount = 0;
+    newCart->next = NULL;
+    
+    if(q.rear == NULL) {
+        q.front = q.rear = newCart;
+    } else {
+        q.rear->next = newCart;
+        q.rear = newCart;
+    }
+}
+
+// Thêm sản phẩm vào giỏ hàng cuối
+void addProduct(Queue &q, string name, float price, int quantity) {
+    if(q.rear == NULL) return;
+    
+    int idx = q.rear->numProducts;
+    q.rear->products[idx].name = name;
+    q.rear->products[idx].price = price;
+    q.rear->products[idx].quantity = quantity;
+    q.rear->numProducts++;
+    
+    q.rear->totalAmount += price * quantity;
+    
+    if(name == "A") {
+        q.productACount += quantity;
+    }
+}
+
+// 2. Loại bỏ người đầu tiên khỏi hàng đợi (sau khi thanh toán)
+Cart* deQueue(Queue &q) {
+    if(q.front == NULL) return NULL;
+    
+    Cart* temp = q.front;
+    q.front = q.front->next;
+    
+    if(q.front == NULL) {
+        q.rear = NULL;
+    }
+    
+    // 3. Cập nhật tổng doanh thu
+    q.totalRevenue += temp->totalAmount;
+    
+    return temp;
+}
+
+// In thông tin giỏ hàng
+void printCart(Cart* cart) {
+    cout << "\nGiỏ hàng #" << cart->cartId << endl;
+    for(int i = 0; i < cart->numProducts; i++) {
+        cout << cart->products[i].name << ": "
+             << cart->products[i].quantity << " x "
+             << cart->products[i].price << "đ = "
+             << cart->products[i].price * cart->products[i].quantity << "đ\n";
+    }
+    cout << "Tổng tiền: " << cart->totalAmount << "đ\n";
+}
+
+int main() {
+    Queue q;
+    initQueue(q);
+    
+    // Thêm khách hàng và sản phẩm để test
+    enQueue(q, 1);
+    addProduct(q, "A", 10000, 2);
+    addProduct(q, "B", 15000, 1);
+    
+    enQueue(q, 2);
+    addProduct(q, "A", 10000, 1);
+    addProduct(q, "C", 20000, 2);
+    
+    // Xử lý thanh toán từng khách
+    cout << "Xử lý thanh toán:\n";
+    while(q.front != NULL) {
+        Cart* processed = deQueue(q);
+        printCart(processed);
+        delete processed;
+    }
+    
+    // 3. In tổng doanh thu
+    cout << "\nTổng doanh thu: " << q.totalRevenue << "đ\n";
+    
+    // 4. In số lượng sản phẩm A đã bán
+    cout << "Số lượng sản phẩm A đã bán: " << q.productACount << " cái\n";
+    
+    return 0;
+}
